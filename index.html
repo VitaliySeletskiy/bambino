@@ -1,0 +1,152 @@
+<!doctype html>
+<html class="no-js" lang="" ng-app="app">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.css">
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    [ng-cloak] {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body ng-cloak ng-controller="AppCtrl as ctrl">
+  <!--[if lte IE 9]>
+            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+        <![endif]-->
+
+  <!-- CONTENT:START al-on.click="onClick($event)" -->
+  <div infinite-scroll='ctrl.fetchNextVideos()' class="wrapper">
+    <h1>Мультфильмы</h1>
+    <div app-video class="card" 
+         ng-repeat="card in ctrl.videos"
+         data-fancybox href="{{card.video}}" 
+         ng-style="card.style">
+      <div class="card__content">
+        <a data-fancybox href="{{card.video}}" class="play-button">
+          <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 50 50">
+            <path d="M42.7,42.7L25,50L7.3,42.7L0,25L7.3,7.3L25,0l17.7,7.3L50,25L42.7,42.7z" class="polygon"></path>
+            <polygon points="32.5,25 21.5,31.4 21.5,18.6 "></polygon>
+          </svg>
+        </a>
+        <div class="card__content--description">
+          <h4 class="roll-up">
+            {{card.title}}
+          </h4>
+          <p class="text-reveal">
+            <span>
+              {{card.desc}}
+            </span>
+          </p>
+        </div>
+      </div>
+    </div>
+    <!-- CONTENT:END -->
+
+    <script src="js/vendor/modernizr-3.5.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tilt.js/1.2.1/tilt.jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fancybox/3.2.5/jquery.fancybox.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.9/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ngInfiniteScroll/1.3.0/ng-infinite-scroll.min.js"></script>
+    <script>
+      var app = angular.module('app', ['infinite-scroll']);
+
+      app.directive('appVideo', function () {
+        function link(scope, element, attrs) {
+          $(element[0]).tilt({
+            glare: true,
+            maxGlare: .3,
+            maxTilt: 5
+          });
+          $(element[0]).fancybox({
+            youtube: {
+              showinfo: 0
+            },
+            vimeo: {
+              color: 'f00'
+            }
+          });
+        }
+        return {
+          link: link
+        };
+      });
+
+      app.controller('AppCtrl', function AppCtrl($scope) {
+        var ctrl = this;
+
+        ctrl.videos = [];
+        ctrl.nextPageToken = null;
+
+        var playlists = [
+          'PLLzFZKSH2lifyUu5o5_URaoaNOnB-c6nq',
+          'PLv6VzWT8jd9p7uNdR_l4b8lf-4YRckdzu',
+          'PL2XYfshKKJa9P37sBIHKMv32Ov-DmCHK2',
+          'PLv6VzWT8jd9oTw0HpJKA6G5mViqlX20fr',
+          'PLbvitNlcJe5S3rBzo3U6Us4fmxD5Dkn_2',
+          'PLv6VzWT8jd9oLbsXpmqerdAE2pl2O0yWb',
+          'PLv6VzWT8jd9ovTW-13zs7QGE5Vm03Hpkn',
+          'PLv6VzWT8jd9qKxF0mh2WQWdmo5fOL_gw7'
+        ];
+        var currentPlaylist = null;
+        var api = "https://www.googleapis.com/youtube/v3/playlistItems";
+        
+        ctrl.fetchNextVideos = function() {
+          $.getJSON(api, {
+            key: 'AIzaSyD7SjCN_bIqLw9GC_Oyd6VxpD0hTv_0p8E',
+            part: "snippet",
+            type: "video",
+            order: "date",
+            maxResults: 9,
+            playlistId: nextPlayList(),
+            //fields: "items(snippet(publishedAt, resourceId/videoId, title)), nextPageToken",
+            pageToken: (ctrl.nextPageToken || '')
+          }, handleData);
+        }
+
+        function nextPlayList() {
+          var index = randomInt(0, playlists.length);
+          return playlists[index];
+        }
+
+        function randomInt(min, max) {
+          return Math.floor(Math.random() * (max - min)) + min;
+        }
+
+        function handleData(data) {
+          console.log(data);
+            var items = data.items;
+            ctrl.nextPageToken = data.nextPageToken;
+            items.forEach(function (i) {
+              var videoId = i.snippet.resourceId.videoId;
+              var videoTitle = i.snippet.title;
+              var videoImage = 'https://i.ytimg.com/vi/' + videoId + '/hqdefault.jpg';
+              ctrl.videos.push({
+                title: videoTitle,
+                desc: '',
+                image: videoImage,
+                video: 'https://www.youtube.com/embed/' + videoId + '?rel=0&controls=2&iv_load_policy=3&modestbranding=1',
+                style: {"background-image": "url('"+ videoImage +"')"}
+              });
+              $scope.$apply();
+            });    
+        }
+
+      });
+    </script>
+</body>
+
+</html>
